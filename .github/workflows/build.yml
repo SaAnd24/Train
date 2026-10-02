@@ -2,40 +2,41 @@ name: Build APK
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
-    - name: Build Release APK
-      run: ./gradlew assembleRelease
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.4'
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v3
-      with:
-        name: app-release
-        path: app/build/outputs/apk/release/app-release-unsigned.apk
+      - name: Build debug APK
+        run: gradle assembleDebug --stacktrace
 
-    - name: Build Release AAB
-      run: ./gradlew bundleRelease
-
-    - name: Upload AAB
-      uses: actions/upload-artifact@v3
-      with:
-        name: app-release-aab
-        path: app/build/outputs/bundle/release/app-release.aab
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: homefitness-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
